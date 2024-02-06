@@ -14,7 +14,7 @@ abigen!(
         name = "SimpleContract",
         abi = "../simple_contract/out/debug/simple_contract-abi.json"
     ),
-    Script(name = "VerifierScript", abi = "../verifier_script/out/debug/verifier_script-abi.json"),
+    Script(name = "VerifierScript", abi = "../bytecode_verifier_script/out/debug/verifier_script-abi.json"),
     Contract(
         name = "SwapperContract",
         abi = "../configurable_swapper_contract/out/debug/swapper_contract-abi.json"
@@ -26,6 +26,7 @@ mod contract {
 
     use super::*;
 
+    /// Test to make sure swapping configurables in a contract works
     #[tokio::test]
     async fn can_swap_configurables() {
         let (swapper_instance, _id, wallet) = get_swapper_contract_instance().await;
@@ -79,6 +80,7 @@ mod contract {
         assert!(result_u64 == 119);
     }
 
+    /// Test to make sure computing the bytecode root of a contract works
     #[tokio::test]
     async fn can_compute_bytecode_root() {
         let (simple_instance, id, wallet, root) = get_simple_contract_instance().await;
@@ -90,7 +92,7 @@ mod contract {
         let my_configurables = build_configurables(offset);
 
         // Create verifier script instance
-        let script_bin_path = "../verifier_script/out/debug/verifier_script.bin";
+        let script_bin_path = "../bytecode_verifier_script/out/debug/verifier_script.bin";
         let script_instance = VerifierScript::new(wallet, script_bin_path);
 
         // Run the script to verify the expected bytecode root
@@ -106,6 +108,7 @@ mod contract {
         assert_eq!(result, Bits256(*root));
     }
 
+    /// Helper function to deploy the simple contract 
     pub async fn get_simple_contract_instance() -> (
         SimpleContract<WalletUnlocked>,
         ContractId,
@@ -154,6 +157,7 @@ mod contract {
 mod predicate {
     use super::*;
 
+    /// Test to make sure swapping configurables in a predicate works
     #[tokio::test]
     async fn can_swap_configurables() {
         let (swapper_instance, _id, wallet) = get_swapper_contract_instance().await;
@@ -219,8 +223,9 @@ mod predicate {
             .unwrap();
     }
 
+    /// Test to make sure computing the address of a predicate works
     #[tokio::test]
-    async fn can_compute_bytecode_root() {
+    async fn can_compute_address() {
         let wallet = get_wallet().await;
 
         // Get the bytecode of simple predicate and the configuables
@@ -232,7 +237,7 @@ mod predicate {
         let my_configurables = build_configurables(offset);
 
         // Create verifier script instance
-        let script_bin_path = "../verifier_script/out/debug/verifier_script.bin";
+        let script_bin_path = "../bytecode_verifier_script/out/debug/verifier_script.bin";
         let script_instance = VerifierScript::new(wallet.clone(), script_bin_path);
 
         // Create preciate
@@ -258,6 +263,7 @@ mod predicate {
     }
 }
 
+/// Helper function to generate a wallet
 pub(crate) async fn get_wallet() -> WalletUnlocked {
     // Launch a local network and deploy the contract
     let mut wallets = launch_custom_provider_and_get_wallets(
@@ -275,6 +281,7 @@ pub(crate) async fn get_wallet() -> WalletUnlocked {
     wallets.pop().unwrap()
 }
 
+/// Helper function to deploy the swapper contract
 pub(crate) async fn get_swapper_contract_instance() -> (
     SwapperContract<WalletUnlocked>,
     ContractId,
@@ -307,6 +314,7 @@ pub(crate) async fn get_swapper_contract_instance() -> (
     (instance, id.into(), wallet)
 }
 
+/// Helper function to generate the configurable changes needed. Hardcoded 119u64 for now
 pub fn build_configurables(offset: u64) -> Vec<(u64, Vec<u8>)> {
     // Build the configurable changes from the abi.json
     // This is hardcoded for now. From the json below we know it's at offset 68 for simple_contract
