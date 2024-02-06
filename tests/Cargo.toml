@@ -1,0 +1,17 @@
+[package]
+name = "script"
+description = "A cargo-generate template for Rust + Sway integration testing."
+version = "0.1.0"
+edition = "2021"
+authors = ["bitzoic <bitzoic.eth@gmail.com>"]
+license = "Apache-2.0"
+
+[dev-dependencies]
+fuels = { version = "0.53.0", features = ["fuel-core-lib"] }
+tokio = { version = "1.12", features = ["rt", "macros"] }
+rand = { version = "0.8.5", default-features = false, features = ["std_rng", "getrandom"] }
+
+[[test]]
+harness = true
+name = "integration_tests"
+path = "tests/harness.rs"
