@@ -31,7 +31,7 @@ fn main(identity: Identity, bytecode: Vec<u8>, config: Vec<(u64, Vec<u8>)>) -> b
             assert(root == result_bytecode_root);
             result_bytecode_root
         },
-        Identity::Address(address) => {
+        Identity::Address(predicate_id) => {
             // Prepend the seed to the bytecode root to compute the predicate address
             let mut seed = Bytes::with_capacity(4);
             seed.push(SEED[0]);
@@ -45,7 +45,7 @@ fn main(identity: Identity, bytecode: Vec<u8>, config: Vec<(u64, Vec<u8>)>) -> b
             let result_predicate_id = hasher.sha256();
 
             // Verify 
-            assert(address.value == result_predicate_id);
+            assert(predicate_id.value == result_predicate_id);
             result_predicate_id
         }
     }
@@ -100,8 +100,8 @@ fn generate_leaves(bytecode: Vec<u8>) -> Vec<b256> {
         let leaf_offset_ptr = bytecode.buf.ptr.add_uint_offset(leaf_iterator * LEAF_SIZE);
 
         // Group bytes into leaves of size LEAF_SIZE
-        // If we have less than LEAF_SIZE, check if it's a multipe of MULTIPLE.
-        // If it is, then simple add it as a leaf.
+        // If we have less than LEAF_SIZE, check if it's a multiple of MULTIPLE.
+        // If it is, then simply add it as a leaf.
         // If it isn't, then pad with zeros to the nearest MULTIPLE.
         if bytes_remaining >= LEAF_SIZE {
             // Add leaf with size LEAF_SIZE
@@ -157,6 +157,7 @@ pub fn leaf_digest(data: raw_slice) -> b256 {
     let number_of_bytes = data.number_of_bytes();
     let mut bytes = Bytes::with_capacity(number_of_bytes + 1);
 
+    // Prepend LEAF to the leaf bytes
     bytes.buf.ptr().write_byte(LEAF);
     data.ptr().copy_bytes_to(
         bytes.buf.ptr().add_uint_offset(1), 
@@ -164,6 +165,7 @@ pub fn leaf_digest(data: raw_slice) -> b256 {
     );
     bytes.len = number_of_bytes + 1;
 
+    // Compute the digest
     let mut result_buffer = b256::min();
     asm(
         hash: result_buffer,
@@ -181,11 +183,13 @@ pub fn node_digest(left: b256, right: b256) -> b256 {
     let new_ptr_left = bytes.buf.ptr().add_uint_offset(1);
     let new_ptr_right = bytes.buf.ptr().add_uint_offset(33);
 
+    // Prepend NODE and concat the 2 node bytes for the current node
     bytes.buf.ptr().write_byte(NODE);
     __addr_of(left).copy_bytes_to(new_ptr_left, 32);
     __addr_of(right).copy_bytes_to(new_ptr_right, 32);
     bytes.len = 65;
 
+    // Compute the digest
     let mut result_buffer = b256::min();
     asm(
         hash: result_buffer,
